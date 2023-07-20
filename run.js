@@ -94,14 +94,28 @@ function convertSubstringFunctions(content) {
       }
     }
 
-      // handle dbms_lob
-      if (line.toLowerCase().includes('dbms_lob')) {
-        const regex = /(DBMS_LOB.SUBSTR\()("?)([^"]+)("?)(,\s*)([0-9]+)(,\s*)([0-9+])(\))/i;
-        const replace = "substring($3, $8, $6)";
-        const match = regex.exec(newLine);
-        newLine = newLine.replace(regex, replace);
-        newLine = newLine.replace(match[3] + ',', match[3].toLowerCase() + ',');
+    // handle dbms_lob
+    if (line.toLowerCase().includes('dbms_lob')) {
+      const regex = /(DBMS_LOB.SUBSTR\()("?)([^"]+)("?)(,\s*)([0-9]+)(,\s*)([0-9+])(\))/i;
+      const replace = "substring($3, $8, $6)";
+      const match = regex.exec(newLine);
+      newLine = newLine.replace(regex, replace);
+      newLine = newLine.replace(match[3] + ',', match[3].toLowerCase() + ',');
+    }
+
+    // if there's an AS clause and it's redundant, remove the AS clause
+    if (newLine.toLowerCase().includes(' as ')) {
+      const regex = /(\.?)([a-z0-9_]+)(\s+)(as)(\s+)("?)([a-z0-9_]+)("?)(,?)/i;
+      const match = regex.exec(newLine);
+      if (match) {
+        if (match[2].toLowerCase() === match[7].toLowerCase()) {
+          // then remove the as clause
+          newLine = newLine.replace(/([^ ]+)(\s+)(AS)([^,]+)(,?)/, '$1$5');
+        } else {
+          newLine = newLine.replace(`${match[4]}${match[5]}${match[6]}${match[7]}`, `${match[4]}${match[5]}${match[6]}${match[7].toLowerCase()}`)
+        }
       }
+    }
 
     ret.push(newLine);
   }
