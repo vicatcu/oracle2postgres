@@ -70,6 +70,14 @@ function convertSubstringFunctions(content) {
       newLine = newLine.replace(match[3] + ',', match[3].toLowerCase() + ',');
     }
 
+    if (line.toLowerCase().includes('to_char')) {
+      const regex = /to_char\s*\(\s*([^) ]+)\s*\)/i;
+      const match = regex.exec(newLine);
+      const replace = `${match[1]}::varchar(255)`;
+      newLine = newLine.replace(regex, replace);
+      newLine = newLine.replace(match[1] + ':', match[1].toLowerCase() + ':');
+    }
+
     let re = /\.([a-z0-9_]+)([, ]|$)/i;
     let match = re.exec(line);
     if (match?.[1]) {
