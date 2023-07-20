@@ -78,6 +78,16 @@ function convertSubstringFunctions(content) {
       newLine = newLine.replace(match[1] + ':', match[1].toLowerCase() + ':');
     }
 
+    if (line.toLowerCase().includes('nvl')) {
+      const regex = /(nvl\s*\(\s*)([^)\, ]+)(\s*,\s*)(.+)(\s*\))/i;
+      const match = regex.exec(newLine);
+      const replace = `coalesce(${match[2]}, ${match[4]})`;
+      newLine = newLine.replace(regex, replace);
+      if (match[2].includes('.')) {
+        newLine = newLine.replace(match[2] + ',', match[2].toLowerCase() + ',');
+      }
+    }
+
     let re = /\.([a-z0-9_]+)([, ]|$)/i;
     let match = re.exec(line);
     if (match?.[1]) {
