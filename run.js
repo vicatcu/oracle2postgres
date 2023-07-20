@@ -102,7 +102,7 @@ function convertSubstringFunctions(content) {
       if (!nString.endsWith('.')) {
         if (!newLine.toLowerCase().includes(nString + ' as ') && !fromEncountered) {
           let skip = false;
-          const specials = ['(', '|'];
+          const specials = ['(', '|', '<', '>', '='];
           for (const special of specials) {
             if (newLine.includes(special)) {
               skip = true;
