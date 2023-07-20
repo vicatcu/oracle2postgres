@@ -109,8 +109,7 @@ function convertSubstringFunctions(content) {
 
     // if there's an AS clause and it's redundant, remove the AS clause
     const argv = process.argv;
-
-    if (process.argv.includes('--no-alias')) {
+    if (argv.includes('--no-alias')) {
       if (newLine.toLowerCase().includes(' as ')) {
         const regex = /(\.?)([a-z0-9_]+)(\s+)(as)(\s+)("?)([a-z0-9_]+)("?)(,?)/i;
         const match = regex.exec(newLine);
