@@ -104,15 +104,19 @@ function convertSubstringFunctions(content) {
     }
 
     // if there's an AS clause and it's redundant, remove the AS clause
-    if (newLine.toLowerCase().includes(' as ')) {
-      const regex = /(\.?)([a-z0-9_]+)(\s+)(as)(\s+)("?)([a-z0-9_]+)("?)(,?)/i;
-      const match = regex.exec(newLine);
-      if (match) {
-        if (match[2].toLowerCase() === match[7].toLowerCase()) {
-          // then remove the as clause
-          newLine = newLine.replace(/([^ ]+)(\s+)(AS)([^,]+)(,?)/, '$1$5');
-        } else {
-          newLine = newLine.replace(`${match[4]}${match[5]}${match[6]}${match[7]}`, `${match[4]}${match[5]}${match[6]}${match[7].toLowerCase()}`)
+    const argv = process.argv;
+
+    if (process.argv.includes('--no-alias')) {
+      if (newLine.toLowerCase().includes(' as ')) {
+        const regex = /(\.?)([a-z0-9_]+)(\s+)(as)(\s+)("?)([a-z0-9_]+)("?)(,?)/i;
+        const match = regex.exec(newLine);
+        if (match) {
+          if (match[2].toLowerCase() === match[7].toLowerCase()) {
+            // then remove the as clause
+            newLine = newLine.replace(/([^ ]+)(\s+)(AS)([^,]+)(,?)/, '$1$5');
+          } else {
+            newLine = newLine.replace(`${match[4]}${match[5]}${match[6]}${match[7]}`, `${match[4]}${match[5]}${match[6]}${match[7].toLowerCase()}`)
+          }
         }
       }
     }
