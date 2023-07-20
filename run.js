@@ -101,8 +101,19 @@ function convertSubstringFunctions(content) {
       newLine = newLine.replace(oString, nString);
       if (!nString.endsWith('.')) {
         if (!newLine.toLowerCase().includes(nString + ' as ') && !fromEncountered) {
-          // if there's not an 'AS' then add one
-          newLine = newLine.replace(nString , `${nString} AS "${match}"`);
+          let skip = false;
+          const specials = ['(', '|'];
+          for (const special of specials) {
+            if (newLine.includes(special)) {
+              skip = true;
+              break;
+            }
+          }
+
+          if (!skip) {
+            // if there's not an 'AS' then add one
+            newLine = newLine.replace(nString , `${nString} AS "${match}"`);
+          }
         }
       }
     }
