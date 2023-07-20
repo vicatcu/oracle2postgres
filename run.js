@@ -3,6 +3,10 @@ const path = require('path');
 async function run() {
   const filesToTranslate = await readdir(path.resolve('./', 'oracle-queries'));
   for (const filename of filesToTranslate) {
+    if (filename === '.gitkeep') {
+      continue;
+    }
+
     process.stdout.write(`Translating "${filename}"...`);
     try {
       let content = await readFile(path.resolve('./', 'oracle-queries', filename), 'utf8');
