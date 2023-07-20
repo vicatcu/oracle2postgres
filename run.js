@@ -27,43 +27,83 @@ function convertSubstringFunctions(content) {
   let lines = content.split(/[\n\r]/);
   const repMap = [];
   for (const line of lines) {
-    let newLine = line;
+    const keywords = [
+      {regex: /(\b)(select)(\b)/igm, replace: 'SELECT'},
+      {regex: /(\b)(from)(\b)/igm, replace: 'FROM'},
+      {regex: /(\b)(left)(\b)/igm, replace: 'LEFT'},
+      {regex: /(\b)(inner)(\b)/igm, replace: 'INNER'},
+      {regex: /(\b)(right)(\b)/igm, replace: 'RIGHT'},
+      {regex: /(\b)(join)(\b)/igm,replace: 'JOIN'},
+      {regex: /(\b)(where)(\b)/igm, replace: 'WHERE'},
+      {regex: /(\b)(in)(\b)/igm, replace: 'IN'},
+      {regex: /(\b)(on)(\b)/igm, replace: 'ON'},
+      {regex: /(\b)(as)(\b)/igm, replace: 'AS'},
+      {regex: /(\b)(and)(\b)/igm, replace: 'AND'},
+      {regex: /(\b)(or)(\b)/igm, replace: 'OR'},
+      {regex: /(\b)(is)(\b)/igm, replace: 'IS'},
+      {regex: /(\b)(not)(\b)/igm, replace: 'NOT'},
+      {regex: /(\b)(null)(\b)/igm, replace: 'NULL'},
+      {regex: /(\b)(like)(\b)/igm, replace: 'LIKE'},
+    ];
+
+    let newLine = line.trim();
+    for (const keyword of keywords) {
+      const re = keyword.regex;
+      const rep = keyword.replace;
+      newLine = newLine.replace(re, `$1${rep}$3`);
+    }
+
     if (line.toLowerCase().includes('from')) {
       fromEncountered = true;
     }
 
-    if (line.toLowerCase().includes('dbms_lob')) {
-      // handle dbms_lob
+    let re = /\.([a-z0-9_]+)([, ]|$)/i;
+    let match = re.exec(line);
+    if (match?.[1]) {
+      const oldString = '.' + match[1]
+      const newString = oldString.toLowerCase();
+      repMap.push({oldString, newString, match: match[1]});
+    }
 
-    } else {
-      let re = /\.([a-z0-9_]+)[, ]/i;
-      let match = re.exec(line);
-      if (match?.[1]) {
-        const oldString = '.' + match[1]
-        const newString = oldString.toLowerCase();
-        repMap.push({oldString, newString, match: match[1]});
-      }
+    re = /([a-z0-9_]+)\./i;
+    match = re.exec(line);
+    if (match?.[1]) {
+      const oldString = match[1] + '.';
+      const newString = oldString.toLowerCase();
+      repMap.push({oldString, newString, match: match[1]});
+    }
 
-      re = /([a-z0-9_]+)\./i;
-      match = re.exec(line);
-      if (match?.[1]) {
-        const oldString = match[1] + '.';
-        const newString = oldString.toLowerCase();
-        repMap.push({oldString, newString, match: match[1]});
-      }
+    re = /join ([a-z0-9_]+)/i;
+    match = re.exec(line);
+    if (match?.[1]) {
+      const oldString = match[1];
+      const newString = oldString.toLowerCase();
+      repMap.push({oldString, newString, match: match[1]});
+    }
 
-
-      for (const rep of repMap) {
-        const oString = rep.oldString;
-        const nString = rep.newString;
-        const match = rep.match;
-        newLine = newLine.replace(oString, nString);
+    for (const rep of repMap) {
+      const oString = rep.oldString;
+      const nString = rep.newString;
+      const match = rep.match;
+      newLine = newLine.replace(oString, nString);
+      if (!nString.endsWith('.')) {
         if (!newLine.toLowerCase().includes(nString + ' as ') && !fromEncountered) {
           // if there's not an 'AS' then add one
           newLine = newLine.replace(nString , `${nString} AS "${match}"`);
         }
       }
     }
+
+      // handle dbms_lob
+      if (line.toLowerCase().includes('dbms_lob')) {
+        const regex = /(DBMS_LOB.SUBSTR\()("?)([^"]+)("?)(,\s*)([0-9]+)(,\s*)([0-9+])(\))/i;
+        const replace = "substring($3, $8, $6)";
+        const match = regex.exec(newLine);
+        newLine = newLine.replace(regex, replace);
+        newLine = newLine.replace(match[3] + ',', match[3].toLowerCase() + ',');
+      }
+
+    ret.push(newLine);
   }
 
   return ret.join('\n');
