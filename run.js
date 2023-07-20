@@ -43,6 +43,10 @@ function convertSubstringFunctions(content) {
       {regex: /(\b)(is)(\b)/igm, replace: 'IS'},
       {regex: /(\b)(not)(\b)/igm, replace: 'NOT'},
       {regex: /(\b)(null)(\b)/igm, replace: 'NULL'},
+      {regex: /(\b)(when)(\b)/igm, replace: 'WHEN'},
+      {regex: /(\b)(then)(\b)/igm, replace: 'THEN'},
+      {regex: /(\b)(else)(\b)/igm, replace: 'ELSE'},
+      {regex: /(\b)(end)(\b)/igm, replace: 'END'},
       {regex: /(\b)(like)(\b)/igm, replace: 'LIKE'},
     ];
 
@@ -55,6 +59,15 @@ function convertSubstringFunctions(content) {
 
     if (line.toLowerCase().includes('from')) {
       fromEncountered = true;
+    }
+
+    // handle dbms_lob
+    if (line.toLowerCase().includes('dbms_lob')) {
+      const regex = /(DBMS_LOB.SUBSTR\s*\()("?)([^"]+)("?)(,\s*)([0-9]+)(,\s*)([0-9+])(\))/i;
+      const replace = "substring($3, $8, $6)";
+      const match = regex.exec(newLine);
+      newLine = newLine.replace(regex, replace);
+      newLine = newLine.replace(match[3] + ',', match[3].toLowerCase() + ',');
     }
 
     let re = /\.([a-z0-9_]+)([, ]|$)/i;
@@ -92,15 +105,6 @@ function convertSubstringFunctions(content) {
           newLine = newLine.replace(nString , `${nString} AS "${match}"`);
         }
       }
-    }
-
-    // handle dbms_lob
-    if (line.toLowerCase().includes('dbms_lob')) {
-      const regex = /(DBMS_LOB.SUBSTR\()("?)([^"]+)("?)(,\s*)([0-9]+)(,\s*)([0-9+])(\))/i;
-      const replace = "substring($3, $8, $6)";
-      const match = regex.exec(newLine);
-      newLine = newLine.replace(regex, replace);
-      newLine = newLine.replace(match[3] + ',', match[3].toLowerCase() + ',');
     }
 
     // if there's an AS clause and it's redundant, remove the AS clause
