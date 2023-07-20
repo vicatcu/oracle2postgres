@@ -128,6 +128,6 @@ function convertSubstringFunctions(content) {
     ret.push(newLine);
   }
 
-  return ret.join('\n');
+  return ret.filter(v => !!v?.trim()).join('\r\n');
 }
 run().then(() => console.log('Done.')).catch(e => console.error(e));
