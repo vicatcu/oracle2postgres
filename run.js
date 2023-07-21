@@ -170,6 +170,7 @@ function convertSubstringFunctions(content) {
     }
 
 
+    let extraLinesToPush = [];
     if (!argv.includes('--no-extra-aliases')) {
       if (newLine.toLowerCase().includes(' as ')) {
         const regex = /(.*)( as )(.*)/i;
@@ -177,15 +178,31 @@ function convertSubstringFunctions(content) {
         let alias = match[3].trim();
         const newLineEndsWithComma = alias.trim().endsWith(',');
         const extra = newLineEndsWithComma ? '' : ',';
+        const newLineStartsWithElse = newLine.toLowerCase().startsWith('else ');
+
+        if (newLineStartsWithElse) {
+          // seek backwards for the first line that ends with a comma
+          // the next line to the end are the lines that need to be copied
+          const idxOfMostRecentComma = ret.slice().reverse().findIndex(v => v.endsWith(','));
+          extraLinesToPush = ret.slice(ret.length - idxOfMostRecentComma);
+        }
+
         if (alias.toUpperCase() !== alias) {
           ret.push(newLine.replace(' AS ' + alias, ' AS ' + alias.toUpperCase() + extra));
         }
+
         if (alias.toLowerCase() !== alias) {
+          for (const line of extraLinesToPush) {
+            ret.push(line);
+          }
           ret.push(newLine.replace(' AS ' + alias, ' AS ' + alias.toLowerCase() + extra));
         }
       }
     }
 
+    for (const line of extraLinesToPush) {
+      ret.push(line);
+    }
     ret.push(newLine);
 
   }
