@@ -190,6 +190,17 @@ function convertSubstringFunctions(content) {
 
   }
 
+  let idx = 0;
+  for (const line of ret) {
+    // quote all the 'AS' strings
+    if (line.includes(' AS ')) {
+      const regex = /(.*)( AS )("?)([^,"]+)("?)(,?)/i;
+      const match = regex.exec(line);
+      ret[idx] = `${match[1]}${match[2]}"${match[4]}"${match[6]}`;
+    }
+    idx++;
+  }
+
   return ret.filter(v => !!v?.trim()).join('\r\n');
 }
 run().then(() => console.log('Done.')).catch(e => console.error(e));
