@@ -24,7 +24,18 @@ async function run() {
 function convertSubstringFunctions(content) {
   const ret = [];
   let fromEncountered = false;
-  let lines = content.split(/[\n\r]/);
+  let selectEncountered = false;
+  const specials = ['(', '|', '<', '>', '='];
+
+  let lines = content.trim().split(/[\n\r]/);
+  if (lines[0].toLowerCase().startsWith('select')) {
+    const regex = /(select)(\s+)(.*)/i;
+    const match = regex.exec(lines[0]);
+    if (match?.[3]) {
+      lines = ['select', match[3]].concat(lines.slice(1));
+    }
+  }
+
   const repMap = [];
   for (const line of lines) {
     const keywords = [
@@ -57,7 +68,13 @@ function convertSubstringFunctions(content) {
       newLine = newLine.replace(re, `$1${rep}$3`);
     }
 
-    if (line.toLowerCase().includes('from')) {
+    const isSelect = line.toLowerCase().includes('select');
+    if (isSelect) {
+      selectEncountered = true;
+    }
+
+    const isFrom = line.toLowerCase().includes('from');
+    if (isFrom) {
       fromEncountered = true;
     }
 
@@ -120,7 +137,6 @@ function convertSubstringFunctions(content) {
       if (!nString.endsWith('.')) {
         if (!newLine.toLowerCase().includes(nString + ' as ') && !fromEncountered) {
           let skip = false;
-          const specials = ['(', '|', '<', '>', '='];
           for (const special of specials) {
             if (newLine.includes(special)) {
               skip = true;
@@ -153,7 +169,25 @@ function convertSubstringFunctions(content) {
       }
     }
 
+
+    if (!argv.includes('--no-extra-aliases')) {
+      if (newLine.toLowerCase().includes(' as ')) {
+        const regex = /(.*)( as )(.*)/i;
+        const match = regex.exec(newLine);
+        let alias = match[3].trim();
+        const newLineEndsWithComma = alias.trim().endsWith(',');
+        const extra = newLineEndsWithComma ? '' : ',';
+        if (alias.toUpperCase() !== alias) {
+          ret.push(newLine.replace(' AS ' + alias, ' AS ' + alias.toUpperCase() + extra));
+        }
+        if (alias.toLowerCase() !== alias) {
+          ret.push(newLine.replace(' AS ' + alias, ' AS ' + alias.toLowerCase() + extra));
+        }
+      }
+    }
+
     ret.push(newLine);
+
   }
 
   return ret.filter(v => !!v?.trim()).join('\r\n');
