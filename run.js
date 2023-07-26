@@ -177,6 +177,8 @@ function convertSubstringFunctions(content) {
 
 
     let extraLinesToPush = [];
+    let newLines = [];
+    let alreadyPushed = false;
     if (!argv.includes('--no-extra-aliases')) {
       if (newLine.toLowerCase().includes(' as ')) {
         const regex = /(.*)( as )(.*)/i;
@@ -184,7 +186,7 @@ function convertSubstringFunctions(content) {
         let alias = match[3].trim();
         const newLineEndsWithComma = alias.trim().endsWith(',');
         const extra = newLineEndsWithComma ? '' : ',';
-        const newLineStartsWithElse = newLine.toLowerCase().startsWith('else ');
+        const newLineStartsWithElse = newLine.toLowerCase().startsWith('else ') || newLine.toLowerCase().startsWith('end ');;
 
         if (newLineStartsWithElse) {
           // seek backwards for the first line that ends with a comma
@@ -193,23 +195,39 @@ function convertSubstringFunctions(content) {
           extraLinesToPush = ret.slice(ret.length - idxOfMostRecentComma);
         }
 
+        ret.push(newLine.replace(' AS ' + alias, ' AS ' + alias + extra));
+        alreadyPushed = true;
+
         if (alias.toUpperCase() !== alias) {
-          ret.push(newLine.replace(' AS ' + alias, ' AS ' + alias.toUpperCase() + extra));
+          for (const line of extraLinesToPush) {
+            newLines.push(line);
+          }
+          if (extraLinesToPush.length > 0) {
+            newLines.push(newLine.replace(' AS ' + alias, ' AS ' + alias.toUpperCase() + extra));
+          } else {
+            ret.push(newLine.replace(' AS ' + alias, ' AS ' + alias.toUpperCase() + extra));
+          }
         }
 
         if (alias.toLowerCase() !== alias) {
           for (const line of extraLinesToPush) {
-            ret.push(line);
+            newLines.push(line);
           }
-          ret.push(newLine.replace(' AS ' + alias, ' AS ' + alias.toLowerCase() + extra));
+          if (extraLinesToPush.length > 0) {
+            newLines.push(newLine.replace(' AS ' + alias, ' AS ' + alias.toLowerCase() + extra));
+          } else {
+            ret.push(newLine.replace(' AS ' + alias, ' AS ' + alias.toLowerCase() + extra));
+          }
         }
       }
     }
 
-    for (const line of extraLinesToPush) {
+    for (const line of newLines) {
       ret.push(line);
     }
-    ret.push(newLine);
+    if (!alreadyPushed) {
+      ret.push(newLine);
+    }
 
   }
 
