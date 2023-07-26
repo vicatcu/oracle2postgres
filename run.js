@@ -105,6 +105,12 @@ function convertSubstringFunctions(content) {
       }
     }
 
+    if (line.toLowerCase().includes('sysdate')) {
+      const regex = /sysdate\s*([+\-])\s*([0-9]+)/ig;
+      const replace = "(current_timestamp $1 (interval '$2' day))";
+      newLine = newLine.replace(regex, replace);
+    }
+
     let re = /\.([a-z0-9_]+)([, ]|$)/i;
     let match = re.exec(line);
     if (match?.[1]) {
