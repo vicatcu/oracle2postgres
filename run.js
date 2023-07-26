@@ -76,6 +76,10 @@ function convertSubstringFunctions(content) {
     const isFrom = line.toLowerCase().includes('from');
     if (isFrom) {
       fromEncountered = true;
+      // make sure the previous row doesn't end with a comma
+      if (ret[ret.length - 1].trim().endsWith(',')) {
+        ret[ret.length - 1] = ret[ret.length - 1].trim().slice(0, -1);
+      }
     }
 
     // handle dbms_lob
