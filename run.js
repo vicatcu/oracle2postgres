@@ -27,7 +27,7 @@ function convertSubstringFunctions(content) {
   let selectEncountered = false;
   const specials = ['(', '|', '<', '>', '='];
 
-  let lines = content.trim().split(/[\n\r]/);
+  let lines = content.trim().split(/[\n\r]+/);
   if (lines[0].toLowerCase().startsWith('select')) {
     const regex = /(select)(\s+)(.*)/i;
     const match = regex.exec(lines[0]);
