@@ -90,7 +90,7 @@ function convertSubstringFunctions(content) {
     if (line.toLowerCase().includes('to_char')) {
       const regex = /to_char\s*\(\s*([^) ]+)\s*\)/i;
       const match = regex.exec(newLine);
-      const replace = `${match[1]}::varchar(255)`;
+      const replace = `cast(${match[1]} AS text)`;
       newLine = newLine.replace(regex, replace);
       newLine = newLine.replace(match[1] + ':', match[1].toLowerCase() + ':');
     }
