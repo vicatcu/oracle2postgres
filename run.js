@@ -111,14 +111,14 @@ function convertSubstringFunctions(content) {
     }
 
     if (line.includes('||')) {
-      // postgres doesn't understand this operator
-      const regex = /([^|]+)\s*\|\|\s*([^|), ]+)/;
-      let match = regex.exec(newLine);
-      while (match && match[1] && match[2]) {
-        const replace = `coalesce(cast(${match[1].toLowerCase().trim()} as text), cast(${match[2].toLowerCase().trim()} as text))`;
-        newLine = newLine.replace(regex, replace);
-        match = regex.exec(newLine);
+      // postgres doesn't understand this operator with mixed types
+      const parts = newLine.split(/as /i);
+      const asPart = parts[1];
+      let replaceLine = parts[0].split('||').map(v => v.toLowerCase().trim()).map(v => `(cast(${v} AS TEXT))`).join(' || ');
+      if (asPart) {
+        replaceLine += ` AS ${asPart}`;
       }
+      newLine = replaceLine;
     }
 
     if (line.toLowerCase().includes('sysdate')) {
