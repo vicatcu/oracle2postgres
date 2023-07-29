@@ -127,7 +127,7 @@ function convertSubstringFunctions(content) {
       let everythingInBetween = [firstArgWithoutLeadingParen].concat(words.slice(firstOrIdx, lastOrIdx + 1)).concat([lastArgWithoutTraillingParen]);
       everythingInBetween = everythingInBetween.join(' ');
       everythingInBetween = everythingInBetween.split('||');
-      everythingInBetween = everythingInBetween.map(v => v.toLowerCase().trim()).map(v => `(CAST(${v} AS TEXT))`);
+      everythingInBetween = everythingInBetween.map(v => v.toLowerCase().trim()).map(v => `(coalesce(CAST(${v} AS TEXT), ''))`);
       const everythingAfterLastOrArg = words.slice(lastOrIdx + 2);
 
       newLine = everythingUpToFirstOrArg
