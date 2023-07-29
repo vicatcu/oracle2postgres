@@ -21,6 +21,7 @@ async function run() {
     }
   }
 }
+
 function convertSubstringFunctions(content) {
   const ret = [];
   let fromEncountered = false;
@@ -106,6 +107,17 @@ function convertSubstringFunctions(content) {
       newLine = newLine.replace(regex, replace);
       if (match[2].includes('.')) {
         newLine = newLine.replace(match[2] + ',', match[2].toLowerCase() + ',');
+      }
+    }
+
+    if (line.includes('||')) {
+      // postgres doesn't understand this operator
+      const regex = /([^|]+)\s*\|\|\s*([^|]+)/
+      let match = regex.exec(newLine);
+      while (match && match[1] && match[2]) {
+        const replace = `coalesce(${match[1].trim()}, ${match[2].trim()})`
+        newLine = newLine.replace(regex, replace);
+        match = regex.exec(newLine);
       }
     }
 
