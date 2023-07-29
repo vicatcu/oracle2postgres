@@ -115,7 +115,7 @@ function convertSubstringFunctions(content) {
       const regex = /([^|]+)\s*\|\|\s*([^|]+)/
       let match = regex.exec(newLine);
       while (match && match[1] && match[2]) {
-        const replace = `coalesce(${match[1].trim()}, ${match[2].trim()})`
+        const replace = `coalesce(cast(${match[1].toLowerCase().trim()} as text), cast(${match[2].toLowerCase().trim()} as text))`
         newLine = newLine.replace(regex, replace);
         match = regex.exec(newLine);
       }
