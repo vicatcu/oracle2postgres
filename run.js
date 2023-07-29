@@ -111,14 +111,32 @@ function convertSubstringFunctions(content) {
     }
 
     if (line.includes('||')) {
-      // postgres doesn't understand this operator with mixed types
-      const parts = newLine.split(/as /i);
-      const asPart = parts[1];
-      let replaceLine = parts[0].split('||').map(v => v.toLowerCase().trim()).map(v => `(cast(${v} AS TEXT))`).join(' || ');
-      if (asPart) {
-        replaceLine += ` AS ${asPart}`;
-      }
-      newLine = replaceLine;
+      // break the string on spaces
+      const words = newLine.split(/\s+/g);
+      const firstOrIdx = words.indexOf('||');
+      const lastOrIdx = (words.length - 1) - words.slice().reverse().indexOf('||');
+      const firstArg = words[firstOrIdx - 1];
+      const lastArg = words[lastOrIdx + 1];
+      const firstArgHasLeadingParen = firstArg?.[0] === '('; // || words[firstOrIdx - 2] === '(';
+      const lastArgHasTrailingParen = lastArg?.slice(-1)[0] === ')'; // || words[lastOrIdx + 2] === ')';
+      const asIdx = words.findIndex(v => /as/i.test(v));
+
+      const firstArgWithoutLeadingParen = firstArg.split('(').join('');
+      const lastArgWithoutTraillingParen = lastArg.split(')').join('');
+      const everythingUpToFirstOrArg = words.slice(0, Math.max(0,firstOrIdx - 1));
+      let everythingInBetween = [firstArgWithoutLeadingParen].concat(words.slice(firstOrIdx, lastOrIdx + 1)).concat([lastArgWithoutTraillingParen]);
+      everythingInBetween = everythingInBetween.join(' ');
+      everythingInBetween = everythingInBetween.split('||');
+      everythingInBetween = everythingInBetween.map(v => v.toLowerCase().trim()).map(v => `(CAST(${v} AS TEXT))`);
+      const everythingAfterLastOrArg = words.slice(lastOrIdx + 2);
+
+      newLine = everythingUpToFirstOrArg
+        .concat([firstArgHasLeadingParen ? '(' : ''])
+        .concat(everythingInBetween.join(' || '))
+        .concat([lastArgHasTrailingParen ? ')' : ''])
+        .concat(everythingAfterLastOrArg)
+
+      newLine = newLine.join(' ');
     }
 
     if (line.toLowerCase().includes('sysdate')) {
@@ -200,39 +218,41 @@ function convertSubstringFunctions(content) {
         const regex = /(.*)( as )(.*)/i;
         const match = regex.exec(newLine);
         let alias = match[3].trim();
-        const newLineEndsWithComma = alias.trim().endsWith(',');
-        const extra = newLineEndsWithComma ? '' : ',';
-        const newLineStartsWithElse = newLine.toLowerCase().startsWith('else ') || newLine.toLowerCase().startsWith('end ');;
+        if (!alias.toUpperCase().startsWith('TEXT')) {
+          const newLineEndsWithComma = alias.trim().endsWith(',');
+          const extra = newLineEndsWithComma ? '' : ',';
+          const newLineStartsWithElse = newLine.toLowerCase().startsWith('else ') || newLine.toLowerCase().startsWith('end ');;
 
-        if (newLineStartsWithElse) {
-          // seek backwards for the first line that ends with a comma
-          // the next line to the end are the lines that need to be copied
-          const idxOfMostRecentComma = ret.slice().reverse().findIndex(v => v.endsWith(','));
-          extraLinesToPush = ret.slice(ret.length - idxOfMostRecentComma);
-        }
-
-        ret.push(newLine.replace(' AS ' + alias, ' AS ' + alias + extra));
-        alreadyPushed = true;
-
-        if (alias.toUpperCase() !== alias) {
-          for (const line of extraLinesToPush) {
-            newLines.push(line);
+          if (newLineStartsWithElse) {
+            // seek backwards for the first line that ends with a comma
+            // the next line to the end are the lines that need to be copied
+            const idxOfMostRecentComma = ret.slice().reverse().findIndex(v => v.endsWith(','));
+            extraLinesToPush = ret.slice(ret.length - idxOfMostRecentComma);
           }
-          if (extraLinesToPush.length > 0) {
-            newLines.push(newLine.replace(' AS ' + alias, ' AS ' + alias.toUpperCase() + extra));
-          } else {
-            ret.push(newLine.replace(' AS ' + alias, ' AS ' + alias.toUpperCase() + extra));
-          }
-        }
 
-        if (alias.toLowerCase() !== alias) {
-          for (const line of extraLinesToPush) {
-            newLines.push(line);
+          ret.push(newLine.replace(' AS ' + alias, ' AS ' + alias + extra));
+          alreadyPushed = true;
+
+          if (alias.toUpperCase() !== alias) {
+            for (const line of extraLinesToPush) {
+              newLines.push(line);
+            }
+            if (extraLinesToPush.length > 0) {
+              newLines.push(newLine.replace(' AS ' + alias, ' AS ' + alias.toUpperCase() + extra));
+            } else {
+              ret.push(newLine.replace(' AS ' + alias, ' AS ' + alias.toUpperCase() + extra));
+            }
           }
-          if (extraLinesToPush.length > 0) {
-            newLines.push(newLine.replace(' AS ' + alias, ' AS ' + alias.toLowerCase() + extra));
-          } else {
-            ret.push(newLine.replace(' AS ' + alias, ' AS ' + alias.toLowerCase() + extra));
+
+          if (alias.toLowerCase() !== alias) {
+            for (const line of extraLinesToPush) {
+              newLines.push(line);
+            }
+            if (extraLinesToPush.length > 0) {
+              newLines.push(newLine.replace(' AS ' + alias, ' AS ' + alias.toLowerCase() + extra));
+            } else {
+              ret.push(newLine.replace(' AS ' + alias, ' AS ' + alias.toLowerCase() + extra));
+            }
           }
         }
       }
@@ -250,7 +270,7 @@ function convertSubstringFunctions(content) {
   let idx = 0;
   for (const line of ret) {
     // quote all the 'AS' strings
-    if (line.includes(' AS ')) {
+    if (line.includes(' AS ') && !line.includes(' AS TEXT')) {
       const regex = /(.*)( AS )("?)([^,"]+)("?)(,?)/i;
       const match = regex.exec(line);
       ret[idx] = `${match[1]}${match[2]}"${match[4]}"${match[6]}`;
