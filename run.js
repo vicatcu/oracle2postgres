@@ -112,10 +112,10 @@ function convertSubstringFunctions(content) {
 
     if (line.includes('||')) {
       // postgres doesn't understand this operator
-      const regex = /([^|]+)\s*\|\|\s*([^|]+)/
+      const regex = /([^|]+)\s*\|\|\s*([^|), ]+)/;
       let match = regex.exec(newLine);
       while (match && match[1] && match[2]) {
-        const replace = `coalesce(cast(${match[1].toLowerCase().trim()} as text), cast(${match[2].toLowerCase().trim()} as text))`
+        const replace = `coalesce(cast(${match[1].toLowerCase().trim()} as text), cast(${match[2].toLowerCase().trim()} as text))`;
         newLine = newLine.replace(regex, replace);
         match = regex.exec(newLine);
       }
