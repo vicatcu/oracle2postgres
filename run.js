@@ -1,6 +1,11 @@
 const { readFile, readdir, writeFile } = require('fs/promises');
 const path = require('path');
 async function run() {
+  // while(1) {
+  //   console.log('hi...');
+  //   await new Promise(r => setTimeout(r, 1000));
+  // }
+
   const filesToTranslate = await readdir(path.resolve('./', 'oracle-queries'));
   for (const filename of filesToTranslate) {
     if (filename === '.gitkeep') {
@@ -39,6 +44,8 @@ function convertSubstringFunctions(content) {
 
   const repMap = [];
   for (const line of lines) {
+    console.log('------------------------------------------------');
+    console.log(`BEFORE: ${line}`);    
     const keywords = [
       {regex: /(\b)(select)(\b)/igm, replace: 'SELECT'},
       {regex: /(\b)(from)(\b)/igm, replace: 'FROM'},
@@ -119,7 +126,7 @@ function convertSubstringFunctions(content) {
       const lastArg = words[lastOrIdx + 1];
       const firstArgHasLeadingParen = firstArg?.[0] === '('; // || words[firstOrIdx - 2] === '(';
       const lastArgHasTrailingParen = lastArg?.slice(-1)[0] === ')'; // || words[lastOrIdx + 2] === ')';
-      const asIdx = words.findIndex(v => /as/i.test(v));
+      const asIdx = words.findIndex(v => /as /i.test(v));
 
       const firstArgWithoutLeadingParen = firstArg.split('(').join('');
       const lastArgWithoutTraillingParen = lastArg.split(')').join('');
@@ -186,7 +193,7 @@ function convertSubstringFunctions(content) {
 
           if (!skip) {
             // if there's not an 'AS' then add one
-            newLine = newLine.replace(nString , `${nString} AS "${match}"`);
+            newLine = newLine.replace(nString , `${nString} AS "${match.toUpperCase()}"`);
           }
         }
       }
@@ -194,19 +201,23 @@ function convertSubstringFunctions(content) {
 
     // if there's an AS clause and it's redundant, remove the AS clause
     const argv = process.argv;
-    if (argv.includes('--no-alias')) {
+    if (argv.includes('--no-redundant-aliases')) {
+      console.log(`NORLB : ${newLine}`);
       if (newLine.toLowerCase().includes(' as ')) {
         const regex = /(\.?)([a-z0-9_]+)(\s+)(as)(\s+)("?)([a-z0-9_]+)("?)(,?)/i;
         const match = regex.exec(newLine);
         if (match) {
-          if (match[2].toLowerCase() === match[7].toLowerCase()) {
+          console.log(`MATCH : ${JSON.stringify(match)}`);
+          if (match[2] === match[7]) {
             // then remove the as clause
             newLine = newLine.replace(/([^ ]+)(\s+)(AS)([^,]+)(,?)/, '$1$5');
-          } else {
-            newLine = newLine.replace(`${match[4]}${match[5]}${match[6]}${match[7]}`, `${match[4]}${match[5]}${match[6]}${match[7].toLowerCase()}`)
-          }
+          } 
+          // else {
+          //   newLine = newLine.replace(`${match[4]}${match[5]}${match[6]}${match[7]}`, `${match[4]}${match[5]}${match[6]}${match[7].toLowerCase()}`)
+          // }
         }
       }
+      console.log(`NORL  : ${newLine}`);
     }
 
 
@@ -256,7 +267,8 @@ function convertSubstringFunctions(content) {
           }
         }
       }
-    }
+      console.log(`!NOXL : ${newLine}`);
+    }    
 
     for (const line of newLines) {
       ret.push(line);
@@ -265,6 +277,7 @@ function convertSubstringFunctions(content) {
       ret.push(newLine);
     }
 
+    console.log(`FINAL : ${newLine}`);
   }
 
   let idx = 0;
@@ -280,4 +293,5 @@ function convertSubstringFunctions(content) {
 
   return ret.filter(v => !!v?.trim()).join('\r\n');
 }
+
 run().then(() => console.log('Done.')).catch(e => console.error(e));
