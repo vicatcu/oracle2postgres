@@ -1,1 +1,1 @@
-node run.js
+node run.js --no-redundant-aliases --no-extra-aliases
